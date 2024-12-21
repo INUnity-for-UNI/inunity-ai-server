@@ -1,0 +1,14 @@
+# clean-bot
+torch
+python-dotenv
+google-generativeai
+transformers
+
+# emb-search
+konlpy
+fasttext
+numpy
+scikit-learn
+tqdm
+
+# summary-text

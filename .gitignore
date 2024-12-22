@@ -1,3 +1,6 @@
+# embSearch AI-models
+service/embSearch/models/cc.ko.300.bin
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -8,7 +8,7 @@ class CleanBotService:
         pass
 
     @staticmethod
-    def load_text_filter(model_name='smilegate-ai/kor_unsmile', device=0):
+    def load_text_filter(model_name='d0v0h/clean-bot', device=0):
         model = BertForSequenceClassification.from_pretrained(model_name)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
 
@@ -42,3 +42,17 @@ class CleanBotService:
             'original_text': text,
             'total': results
         }
+
+if __name__ == "__main__":
+    # Load the model and tokenizer
+    clean_service = CleanBotService()
+    pipe = clean_service.load_text_filter()
+
+    # 테스트할 텍스트
+    test_text = "인천대 컴공 만세"
+
+    # 필터링 수행
+    result = clean_service.filter_text(test_text, pipe, threshold=0.3)
+
+    # 결과 출력
+    print(f"결과: {result['filtered_text']}, clean_score: {result['clean_score']}")

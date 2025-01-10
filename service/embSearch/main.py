@@ -13,8 +13,7 @@ if __name__ == '__main__':
     notices = load_notice()
 
     # VectorizeService 초기화
-    model_path = './models/cc.ko.300.bin'
-    vectorizer = VectorizeService(model_path=model_path)
+    vectorizer = VectorizeService()
 
     # 사용자 검색어 처리
     query = Query(text='컴퓨터공학부')

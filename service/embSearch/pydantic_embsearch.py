@@ -6,8 +6,8 @@ from pydantic import BaseModel, Field, validator
 
 # VectorizeService 클래스
 class VectorizeService:
-    def __init__(self, model_path: str, okt=None):
-        self.fasttext_model = load_model(model_path)
+    def __init__(self, okt=None):
+        self.fasttext_model = load_model('./service/embSearch/models/cc.ko.300.bin')
         self.okt = okt if okt else Okt()
 
     def clean_text(self, text: str):
@@ -43,10 +43,9 @@ class Query(BaseModel):
 
 if __name__ == '__main__':
     # VectorizeService 초기화
-    model_path = './models/cc.ko.300.bin'
-    vectorizer = VectorizeService(model_path=model_path)
+    vectorizer = VectorizeService()
 
     # 사용자 검색어 처리
     query = Query(text='컴퓨터공학부')
     query_vectors = query.to_vector(vectorizer)
-    # print(query_vectors)
+    print(query_vectors)

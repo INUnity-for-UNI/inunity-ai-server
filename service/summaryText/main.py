@@ -7,10 +7,6 @@ import google.generativeai as genai
 # 환경 변수 로드
 load_dotenv()
 
-# Google Generative AI 초기화
-genai.configure(api_key=os.getenv("API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash")
-
 
 # Pydantic 모델 정의
 class NoticeSummaryRequest(BaseModel):
@@ -28,58 +24,95 @@ class NoticeSummaryRequest(BaseModel):
 
 class NoticeSummaryResponse(BaseModel):
     summary: str = Field(..., description="요약된 게시글 내용")
+    # 필요하다면 실행 시간을 담을 수도 있음
     # execution_time: float = Field(..., description="요약 수행 시간 (초)")
 
 
-# 텍스트 요약 요청 생성 함수
-def create_summary_request(content: str) -> NoticeSummaryRequest:
-    return NoticeSummaryRequest(content=content)
-
-
-# 요약 수행 함수
-def summarize_notice(request: NoticeSummaryRequest) -> NoticeSummaryResponse:
-    user_prompt = f"""
-    모든 대답은 {request.language}로 대답해줘.
-    아래 게시글 내용을 요약해줘.
-
-    1. 만약 게시글에 날짜와 장소에 대한 정보가 둘 다 포함되어 있다면:
-        날짜: xxxx년 xx월 xx일
-        장소: xx시 xx동
-        내용: "핵심 내용 간략 설명" 
-
-    2. 만약 게시글에 날짜 정보만 포함되어 있고, 장소 정보가 없다면:
-        날짜: xxxx년 xx월 xx일
-        내용: "핵심 내용 간략 설명"
-
-    3. 만약 게시글에 날짜와 장소 정보가 둘 다 없다면:
-        내용: "핵심 내용 간략 설명"
-
-    게시글: [{request.content}]
+class SummarizerService:
+    """
+    Google Generative AI를 통해 게시글 내용을 요약해주는 서비스 클래스.
     """
 
-    start_time = time.time()
+    def __init__(self, model_name: str = "gemini-1.5-flash"):
+        """
+        SummarizerService 초기화:
+        1. .env 파일로부터 환경변수를 불러옴
+        2. GenerativeModel을 구성
+        """
+        # 환경변수 로드
+        load_dotenv()
 
-    # Generative AI 호출
-    response = model.generate_content(
-        user_prompt,
-        generation_config=genai.types.GenerationConfig(
-            candidate_count=1,
-            stop_sequences=["x"],
-            temperature=1.0,
-        ),
-    )
+        # Google Generative AI 초기화
+        genai.configure(api_key=os.getenv("API_KEY"))
 
-    end_time = time.time()
-    execution_time = end_time - start_time
+        # 사용할 모델 설정
+        self.model = genai.GenerativeModel(model_name)
 
-    return NoticeSummaryResponse(
-        summary=response.text.strip(),
-        # execution_time=execution_time
+    def create_summary_request(self, content: str) -> NoticeSummaryRequest:
+        """
+        게시글 요약을 위한 요청(NoticeSummaryRequest)을 생성하는 메서드.
+
+        :param content: 게시글 원문
+        :return: NoticeSummaryRequest 객체
+        """
+        return NoticeSummaryRequest(content=content)
+
+    def summarize_notice(self, request: NoticeSummaryRequest) -> NoticeSummaryResponse:
+        """
+        NoticeSummaryRequest를 기반으로 실제 요약을 수행하는 메서드.
+
+        1. user_prompt를 생성한다.
+        2. generative ai를 통해 요약을 수행한다.
+        3. NoticeSummaryResponse를 반환한다.
+
+        :param request: NoticeSummaryRequest 객체
+        :return: NoticeSummaryResponse 객체
+        """
+        user_prompt = f"""
+        모든 대답은 {request.language}로 대답해줘.
+        아래 게시글 내용을 요약해줘.
+
+        1. 만약 게시글에 날짜와 장소에 대한 정보가 둘 다 포함되어 있다면:
+            날짜: xxxx년 xx월 xx일
+            장소: xx시 xx동
+            내용: "핵심 내용 간략 설명" 
+
+        2. 만약 게시글에 날짜 정보만 포함되어 있고, 장소 정보가 없다면:
+            날짜: xxxx년 xx월 xx일
+            내용: "핵심 내용 간략 설명"
+
+        3. 만약 게시글에 날짜와 장소 정보가 둘 다 없다면:
+            내용: "핵심 내용 간략 설명"
+
+        게시글: [{request.content}]
+        """
+
+        start_time = time.time()
+
+        # Generative AI를 통한 요약 수행
+        response = self.model.generate_content(
+            user_prompt,
+            generation_config=genai.types.GenerationConfig(
+                candidate_count=1,
+                stop_sequences=["x"],
+                temperature=1.0,
+            ),
+        )
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+
+        return NoticeSummaryResponse(
+            summary=response.text.strip(),
+            # 필요하다면 실행 시간을 포함:
+            # execution_time=execution_time
         )
 
 
 # 메인 함수
 if __name__ == "__main__":
+    summarizer = SummarizerService()
+
     # 요약 요청 생성
     content = '''
                 ‼️⭐️법과대학 제36회 형사 모의재판 공지⭐️‼️
@@ -116,10 +149,10 @@ if __name__ == "__main__":
                 법과대학 오픈채팅
     '''
 
-    request = create_summary_request(content)
+    request = summarizer.create_summary_request(content)
 
     # 요약 수행
-    response = summarize_notice(request)
+    response = summarizer.summarize_notice(request)
 
     # 결과 출력
     print("\n=== 요약 결과 ===")

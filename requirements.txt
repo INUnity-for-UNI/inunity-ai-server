@@ -6,7 +6,7 @@ transformers
 
 # emb-search
 konlpy
-fasttext
+fasttext-wheel
 numpy
 scikit-learn
 tqdm
